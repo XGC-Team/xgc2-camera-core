@@ -14,8 +14,11 @@ simulation remain separate adapters or products.
 - V4L2 capability, pixel format, frame size, and frame interval enumeration.
 - MMAP streaming for `VIDEO_CAPTURE` and `VIDEO_CAPTURE_MPLANE` devices.
 - MJPEG, H264, YUYV, UYVY, RGB24, BGR24, NV12/NV12M, and GREY formats.
-- Driver capture timestamps from `v4l2_buffer`; the library never replaces a
+- Driver capture timestamps, clock-domain flags, and start-of-exposure versus
+  end-of-frame reference from `v4l2_buffer`; the library never replaces a
   capture timestamp with the time at which `read()` happened to return.
+- A separate host `CLOCK_MONOTONIC` observation sampled immediately after
+  `VIDIOC_DQBUF` for measured clock mapping and latency analysis.
 - RAII ownership of file descriptors, mappings, stream state, and dequeued
   buffers.
 - A deterministic, rate-limited synthetic backend for CI and adapter tests.
@@ -90,9 +93,15 @@ reported only when the kernel sets `V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC`.
 Otherwise the clock is `Unknown`; an adapter that needs wall-clock timestamps
 must perform an explicit, measured clock-domain conversion.
 
-The synthetic backend starts at timestamp zero and advances by the configured
-frame period using the monotonic clock classification. It also paces `read()`;
-when the next frame cannot arrive within `timeout_ms`, `CameraError` with
+`Frame::timestamp_reference()` preserves `V4L2_BUF_FLAG_TSTAMP_SRC_SOE` or
+`V4L2_BUF_FLAG_TSTAMP_SRC_EOF`. `Frame::dequeue_timestamp()` is always a
+separate host observation and must not be substituted for the source timestamp.
+Together these values allow an adapter to publish both the source clock and the
+measured host receipt time without hiding transport or exposure latency.
+
+The synthetic backend timestamps frames in the host monotonic clock domain and
+advances by the configured frame period. It also paces `read()`; when the next
+frame cannot arrive within `timeout_ms`, `CameraError` with
 `ErrorCode::Timeout` is raised.
 
 ## Inspection

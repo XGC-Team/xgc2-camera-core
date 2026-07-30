@@ -80,12 +80,28 @@ std::int64_t Frame::timestamp_ns() const noexcept {
   return timestamp().to_nanoseconds();
 }
 
+TimestampReference Frame::timestamp_reference() const noexcept {
+  return impl_ ? impl_->timestamp_reference : TimestampReference::Unknown;
+}
+
+const Timestamp &Frame::dequeue_timestamp() const noexcept {
+  static const Timestamp empty;
+  return impl_ ? impl_->dequeue_timestamp : empty;
+}
+
+std::int64_t Frame::dequeue_timestamp_ns() const noexcept {
+  return dequeue_timestamp().to_nanoseconds();
+}
+
 Frame::operator bool() const noexcept { return impl_ != nullptr; }
 
 Frame FrameBuilder::build(std::vector<Plane> planes, std::uint32_t width,
                           std::uint32_t height, PixelFormat pixel_format,
                           CaptureMode capture_mode, std::uint64_t sequence,
-                          const Timestamp &timestamp, std::shared_ptr<void> lease) {
+                          const Timestamp &timestamp,
+                          TimestampReference timestamp_reference,
+                          const Timestamp &dequeue_timestamp,
+                          std::shared_ptr<void> lease) {
   auto impl = std::make_shared<Frame::Impl>();
   impl->planes = std::move(planes);
   impl->width = width;
@@ -94,6 +110,8 @@ Frame FrameBuilder::build(std::vector<Plane> planes, std::uint32_t width,
   impl->capture_mode = capture_mode;
   impl->sequence = sequence;
   impl->timestamp = timestamp;
+  impl->timestamp_reference = timestamp_reference;
+  impl->dequeue_timestamp = dequeue_timestamp;
   impl->lease = std::move(lease);
   return Frame(std::move(impl));
 }
@@ -186,6 +204,18 @@ const char *to_string(TimestampClock value) noexcept {
     return "realtime";
   case TimestampClock::Monotonic:
     return "monotonic";
+  }
+  return "unknown";
+}
+
+const char *to_string(TimestampReference value) noexcept {
+  switch (value) {
+  case TimestampReference::Unknown:
+    return "unknown";
+  case TimestampReference::StartOfExposure:
+    return "start-of-exposure";
+  case TimestampReference::EndOfFrame:
+    return "end-of-frame";
   }
   return "unknown";
 }

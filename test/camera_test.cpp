@@ -50,6 +50,9 @@ void test_format_helpers() {
           "mono8 parser failed");
   require(std::string(camera::to_string(camera::PixelFormat::NV12)) == "nv12",
           "NV12 formatter failed");
+  require(std::string(camera::to_string(camera::TimestampReference::StartOfExposure)) ==
+              "start-of-exposure",
+          "timestamp reference formatter failed");
   require(camera::backend_kind_from_string("synthetic") ==
               camera::BackendKind::Synthetic,
           "backend parser failed");
@@ -77,6 +80,22 @@ void test_format_helpers() {
                                            camera::CaptureMode::MultiPlane,
                                            camera::PixelFormat::MJPEG) == 0U,
           "negotiation must match the advertised capture mode");
+  require(camera::timestamp_clock_from_v4l2_flags(
+              V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC) ==
+              camera::TimestampClock::Monotonic,
+          "V4L2 monotonic timestamp classification failed");
+  require(camera::timestamp_clock_from_v4l2_flags(
+              V4L2_BUF_FLAG_TIMESTAMP_UNKNOWN) ==
+              camera::TimestampClock::Unknown,
+          "unknown V4L2 timestamp must not be guessed as realtime");
+  require(camera::timestamp_reference_from_v4l2_flags(
+              V4L2_BUF_FLAG_TSTAMP_SRC_SOE) ==
+              camera::TimestampReference::StartOfExposure,
+          "V4L2 SOE timestamp classification failed");
+  require(camera::timestamp_reference_from_v4l2_flags(
+              V4L2_BUF_FLAG_TSTAMP_SRC_EOF) ==
+              camera::TimestampReference::EndOfFrame,
+          "V4L2 EOF timestamp classification failed");
 }
 
 void test_single_plane_capture() {
@@ -93,10 +112,16 @@ void test_single_plane_capture() {
   require(first.planes().size() == 1U && first.size() == 32U,
           "GREY plane size mismatch");
   require(first.stride() == 8U, "GREY stride mismatch");
-  require(first.sequence() == 0U && first.timestamp_ns() == 0,
+  require(first.sequence() == 0U && first.timestamp_ns() > 0,
           "first frame metadata mismatch");
+  require(first.timestamp_reference() == camera::TimestampReference::StartOfExposure,
+          "synthetic source timestamp reference mismatch");
+  require(first.dequeue_timestamp().clock == camera::TimestampClock::Monotonic &&
+              first.dequeue_timestamp_ns() > 0,
+          "synthetic dequeue timestamp missing");
   const auto second = device->read(10U);
-  require(second.sequence() == 1U && second.timestamp_ns() == 1000000,
+  require(second.sequence() == 1U &&
+              second.timestamp_ns() - first.timestamp_ns() == 1000000,
           "second frame timing mismatch");
   bool payload_differs = false;
   for (std::size_t index = 0U; index < first.size(); ++index) {

@@ -39,6 +39,15 @@ enum class TimestampClock {
   Monotonic,
 };
 
+// The point in the image acquisition pipeline represented by Timestamp.
+// V4L2 drivers explicitly report either start-of-exposure or end-of-frame.
+// Unknown must be preserved when the driver does not provide this information.
+enum class TimestampReference {
+  Unknown,
+  StartOfExposure,
+  EndOfFrame,
+};
+
 enum class ErrorCode {
   InvalidArgument,
   OpenFailed,
@@ -137,6 +146,12 @@ public:
   std::uint64_t sequence() const noexcept;
   const Timestamp &timestamp() const noexcept;
   std::int64_t timestamp_ns() const noexcept;
+  TimestampReference timestamp_reference() const noexcept;
+  // Host CLOCK_MONOTONIC sampled immediately after VIDIOC_DQBUF. This is not a
+  // replacement for timestamp(); it is an observation used to estimate capture
+  // latency and to map a device clock into the host clock domain.
+  const Timestamp &dequeue_timestamp() const noexcept;
+  std::int64_t dequeue_timestamp_ns() const noexcept;
   explicit operator bool() const noexcept;
 
 private:
@@ -166,6 +181,7 @@ const char *to_string(BackendKind value) noexcept;
 const char *to_string(CaptureMode value) noexcept;
 const char *to_string(PixelFormat value) noexcept;
 const char *to_string(TimestampClock value) noexcept;
+const char *to_string(TimestampReference value) noexcept;
 BackendKind backend_kind_from_string(const std::string &value);
 CaptureMode capture_mode_from_string(const std::string &value);
 PixelFormat pixel_format_from_string(const std::string &value);

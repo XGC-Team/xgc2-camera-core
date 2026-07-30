@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <ctime>
 #include <fcntl.h>
 #include <mutex>
 #include <poll.h>
@@ -347,13 +348,20 @@ Timestamp timestamp_from(const v4l2_buffer &buffer) noexcept {
   Timestamp timestamp;
   timestamp.seconds = buffer.timestamp.tv_sec;
   timestamp.nanoseconds = static_cast<std::uint32_t>(buffer.timestamp.tv_usec) * 1000U;
-  const auto timestamp_type = buffer.flags & V4L2_BUF_FLAG_TIMESTAMP_MASK;
-  if (timestamp_type == V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC) {
-    timestamp.clock = TimestampClock::Monotonic;
-  } else {
-    timestamp.clock = TimestampClock::Unknown;
-  }
+  timestamp.clock = timestamp_clock_from_v4l2_flags(buffer.flags);
   return timestamp;
+}
+
+Timestamp monotonic_now() noexcept {
+  timespec value;
+  std::memset(&value, 0, sizeof(value));
+  Timestamp result;
+  if (::clock_gettime(CLOCK_MONOTONIC, &value) == 0) {
+    result.seconds = value.tv_sec;
+    result.nanoseconds = static_cast<std::uint32_t>(value.tv_nsec);
+    result.clock = TimestampClock::Monotonic;
+  }
+  return result;
 }
 
 class V4L2Camera final : public Camera {
@@ -490,6 +498,7 @@ public:
     }
 
     std::shared_ptr<void> lease;
+    Timestamp dequeue_timestamp;
     {
       std::lock_guard<std::mutex> lock(state_->mutex);
       if (!state_->streaming) {
@@ -502,6 +511,7 @@ public:
         }
         throw_system_error("VIDIOC_DQBUF");
       }
+      dequeue_timestamp = monotonic_now();
       if (buffer.index >= state_->buffers.size()) {
         state_->broken = true;
         throw CameraError(ErrorCode::SystemError,
@@ -557,6 +567,8 @@ public:
     return FrameBuilder::build(std::move(planes), config_.width, config_.height,
                                config_.pixel_format, config_.capture_mode,
                                buffer.sequence, timestamp_from(buffer),
+                               timestamp_reference_from_v4l2_flags(buffer.flags),
+                               dequeue_timestamp,
                                std::move(lease));
   }
 
@@ -714,6 +726,29 @@ private:
 };
 
 } // namespace
+
+TimestampClock timestamp_clock_from_v4l2_flags(std::uint32_t flags) noexcept {
+  const auto timestamp_type = flags & V4L2_BUF_FLAG_TIMESTAMP_MASK;
+  if (timestamp_type == V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC) {
+    return TimestampClock::Monotonic;
+  }
+  // V4L2_BUF_FLAG_TIMESTAMP_UNKNOWN does not establish a realtime clock
+  // domain. Older drivers may happen to use realtime, but callers must measure
+  // and declare that mapping instead of guessing here.
+  return TimestampClock::Unknown;
+}
+
+TimestampReference timestamp_reference_from_v4l2_flags(
+    std::uint32_t flags) noexcept {
+  const auto source = flags & V4L2_BUF_FLAG_TSTAMP_SRC_MASK;
+  if (source == V4L2_BUF_FLAG_TSTAMP_SRC_SOE) {
+    return TimestampReference::StartOfExposure;
+  }
+  if (source == V4L2_BUF_FLAG_TSTAMP_SRC_EOF) {
+    return TimestampReference::EndOfFrame;
+  }
+  return TimestampReference::Unknown;
+}
 
 std::uint32_t pixel_format_to_v4l2(PixelFormat format, CaptureMode mode) noexcept {
   switch (format) {

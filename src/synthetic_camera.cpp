@@ -94,6 +94,7 @@ public:
     }
     sequence_ = 0U;
     next_frame_ = std::chrono::steady_clock::now();
+    source_start_ = next_frame_;
     running_ = true;
   }
 
@@ -171,17 +172,33 @@ public:
 
     const auto period_ns =
         static_cast<std::uint64_t>(std::llround(1000000000.0 / config_.frame_rate));
-    const auto timestamp_ns = sequence_ * period_ns;
+    const auto source_start_ns =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(
+            source_start_.time_since_epoch())
+            .count();
+    const auto timestamp_ns =
+        source_start_ns + static_cast<std::int64_t>(sequence_ * period_ns);
     Timestamp timestamp;
-    timestamp.seconds = static_cast<std::int64_t>(timestamp_ns / 1000000000ULL);
-    timestamp.nanoseconds = static_cast<std::uint32_t>(timestamp_ns % 1000000000ULL);
+    timestamp.seconds = timestamp_ns / 1000000000LL;
+    timestamp.nanoseconds =
+        static_cast<std::uint32_t>(timestamp_ns % 1000000000LL);
     timestamp.clock = TimestampClock::Monotonic;
+    const auto dequeue_now = std::chrono::steady_clock::now().time_since_epoch();
+    const auto dequeue_ns =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(dequeue_now).count();
+    Timestamp dequeue_timestamp;
+    dequeue_timestamp.seconds = dequeue_ns / 1000000000LL;
+    dequeue_timestamp.nanoseconds =
+        static_cast<std::uint32_t>(dequeue_ns % 1000000000LL);
+    dequeue_timestamp.clock = TimestampClock::Monotonic;
 
     const auto frame_sequence = sequence_++;
     next_frame_ =
         std::chrono::steady_clock::now() + std::chrono::nanoseconds(period_ns);
     return FrameBuilder::build(std::move(planes), width, height, config_.pixel_format,
                                config_.capture_mode, frame_sequence, timestamp,
+                               TimestampReference::StartOfExposure,
+                               dequeue_timestamp,
                                std::static_pointer_cast<void>(storage));
   }
 
@@ -195,6 +212,7 @@ private:
   bool running_{false};
   std::uint64_t sequence_{0U};
   std::chrono::steady_clock::time_point next_frame_;
+  std::chrono::steady_clock::time_point source_start_;
 };
 
 } // namespace
