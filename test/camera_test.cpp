@@ -80,20 +80,16 @@ void test_format_helpers() {
                                            camera::CaptureMode::MultiPlane,
                                            camera::PixelFormat::MJPEG) == 0U,
           "negotiation must match the advertised capture mode");
-  require(camera::timestamp_clock_from_v4l2_flags(
-              V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC) ==
+  require(camera::timestamp_clock_from_v4l2_flags(V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC) ==
               camera::TimestampClock::Monotonic,
           "V4L2 monotonic timestamp classification failed");
-  require(camera::timestamp_clock_from_v4l2_flags(
-              V4L2_BUF_FLAG_TIMESTAMP_UNKNOWN) ==
+  require(camera::timestamp_clock_from_v4l2_flags(V4L2_BUF_FLAG_TIMESTAMP_UNKNOWN) ==
               camera::TimestampClock::Unknown,
           "unknown V4L2 timestamp must not be guessed as realtime");
-  require(camera::timestamp_reference_from_v4l2_flags(
-              V4L2_BUF_FLAG_TSTAMP_SRC_SOE) ==
+  require(camera::timestamp_reference_from_v4l2_flags(V4L2_BUF_FLAG_TSTAMP_SRC_SOE) ==
               camera::TimestampReference::StartOfExposure,
           "V4L2 SOE timestamp classification failed");
-  require(camera::timestamp_reference_from_v4l2_flags(
-              V4L2_BUF_FLAG_TSTAMP_SRC_EOF) ==
+  require(camera::timestamp_reference_from_v4l2_flags(V4L2_BUF_FLAG_TSTAMP_SRC_EOF) ==
               camera::TimestampReference::EndOfFrame,
           "V4L2 EOF timestamp classification failed");
 }

@@ -568,8 +568,7 @@ public:
                                config_.pixel_format, config_.capture_mode,
                                buffer.sequence, timestamp_from(buffer),
                                timestamp_reference_from_v4l2_flags(buffer.flags),
-                               dequeue_timestamp,
-                               std::move(lease));
+                               dequeue_timestamp, std::move(lease));
   }
 
   void stop() noexcept override { stop_capture(); }
@@ -738,8 +737,7 @@ TimestampClock timestamp_clock_from_v4l2_flags(std::uint32_t flags) noexcept {
   return TimestampClock::Unknown;
 }
 
-TimestampReference timestamp_reference_from_v4l2_flags(
-    std::uint32_t flags) noexcept {
+TimestampReference timestamp_reference_from_v4l2_flags(std::uint32_t flags) noexcept {
   const auto source = flags & V4L2_BUF_FLAG_TSTAMP_SRC_MASK;
   if (source == V4L2_BUF_FLAG_TSTAMP_SRC_SOE) {
     return TimestampReference::StartOfExposure;
