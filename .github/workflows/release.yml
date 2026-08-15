@@ -27,16 +27,6 @@ on:
         required: false
         default: ""
         type: string
-      run_cpp_quality:
-        description: Run C++ quality checks
-        required: true
-        default: false
-        type: boolean
-      run_source_tests:
-        description: Run source tests
-        required: true
-        default: false
-        type: boolean
 
 permissions:
   actions: read
@@ -78,9 +68,7 @@ jobs:
           fi
           echo "product_version=${product_version}" >>"${GITHUB_OUTPUT}"
           ./.xgc2/scripts/check_package_compliance.sh
-
   cpp-quality:
-    if: ${{ inputs.run_cpp_quality }}
     needs: release-guard
     runs-on: ubuntu-latest
     steps:
@@ -99,9 +87,7 @@ jobs:
               done
               ./.xgc2/scripts/check_cpp_quality.sh
             '
-
   source-tests:
-    if: ${{ inputs.run_source_tests }}
     needs: release-guard
     runs-on: ubuntu-latest
     steps:
@@ -122,7 +108,6 @@ jobs:
               cmake --build .ci/source-tests -- -j"$(nproc)"
               (cd .ci/source-tests && ctest --output-on-failure)
             '
-
   deb-build-and-smoke:
     needs: release-guard
     runs-on: ${{ matrix.runner }}
@@ -201,3 +186,7 @@ jobs:
             .ci/build-manifests/*.json
           retention-days: 14
           include-hidden-files: true
+
+
+
+

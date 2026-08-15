@@ -50,7 +50,7 @@ def build_manifest(arguments: argparse.Namespace) -> pathlib.Path:
         raise SystemExit(f"no .deb artifacts found in {deb_dir}")
 
     manifest = {
-        "schema": "xgc2.build-artifact.v1",
+        "schema": "xgc2.build-artifact.v2",
         "product": arguments.product,
         "source_sha": arguments.source_sha,
         "version": arguments.product_version,
