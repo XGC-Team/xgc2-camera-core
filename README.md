@@ -31,15 +31,16 @@ convert pixel formats.
 ## Build and test
 
 ```bash
-cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
-cmake --build build -j
+mkdir -p build
+(cd build && cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..)
+cmake --build build -- -j"$(nproc)"
 (cd build && ctest --output-on-failure)
 ```
 
 Install to a staging prefix:
 
 ```bash
-cmake --install build --prefix /tmp/xgc2-camera-install
+DESTDIR=/tmp/xgc2-camera-install cmake --build build --target install
 ```
 
 The Debian packaging script builds `libxgc2-camera-dev`:
@@ -130,6 +131,6 @@ serialized internally.
 
 ## Supported release matrix
 
-The product CI builds and installs native Debian packages on Ubuntu Focal,
-Jammy, and Noble for amd64 and arm64. No cross-compiled architecture is labeled
+The product CI builds and installs native Debian packages on Ubuntu Bionic,
+Focal, Jammy, and Noble for amd64 and arm64. No cross-compiled architecture is labeled
 as a native artifact.

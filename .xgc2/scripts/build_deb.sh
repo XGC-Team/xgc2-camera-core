@@ -49,12 +49,19 @@ fi
 rm -rf "${build_dir}" "${stage_dir}" "${output_dir}" "${pkg_root}"
 mkdir -p "${build_dir}" "${output_dir}"
 
-cmake -S "${repo_root}" -B "${build_dir}" \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_INSTALL_PREFIX=/usr \
-  -DCMAKE_CXX_FLAGS_RELEASE="-O3 -DNDEBUG" \
-  -DXGC2_CAMERA_BUILD_TESTING=OFF \
-  -DXGC2_CAMERA_BUILD_TOOLS=ON
+# Bionic ships CMake 3.10. Configure from the build directory; the
+# source-dir / binary-dir flags from 3.13 would treat the binary dir as
+# the source tree.
+(
+  cd "${build_dir}"
+  cmake \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DCMAKE_CXX_FLAGS_RELEASE="-O3 -DNDEBUG" \
+    -DXGC2_CAMERA_BUILD_TESTING=OFF \
+    -DXGC2_CAMERA_BUILD_TOOLS=ON \
+    "${repo_root}"
+)
 cmake --build "${build_dir}" -- -j"$(nproc)"
 DESTDIR="${stage_dir}" cmake --build "${build_dir}" --target install
 

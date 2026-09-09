@@ -82,5 +82,24 @@ grep -q '^    bionic: 0.1.0-10~bionic$' .xgc2/product.yml
 grep -q 'libgcc1 | libgcc-s1' .xgc2/scripts/build_deb.sh
 grep -q 'xgc2-build-bionic-dev:1.0.0' .github/workflows/ci.yml
 grep -q 'xgc2-build-bionic-dev:1.0.0' .github/workflows/release.yml
+if grep -En -- 'cmake[[:space:]]+-[SB][[:space:]]' \
+  .xgc2/scripts/build_deb.sh \
+  .xgc2/scripts/smoke_test_installed.sh \
+  .xgc2/scripts/check_cpp_quality.sh \
+  .github/workflows/ci.yml \
+  .github/workflows/release.yml \
+  README.md; then
+  echo "CMake 3.10 on Bionic does not support source-dir / binary-dir flags; configure from the build directory" >&2
+  exit 1
+fi
+if grep -En -- 'cmake --install' \
+  .xgc2/scripts/build_deb.sh \
+  .xgc2/scripts/smoke_test_installed.sh \
+  README.md; then
+  echo "CMake 3.10 on Bionic does not support cmake --install; use --target install" >&2
+  exit 1
+fi
+grep -q 'cd "${build_dir}"' .xgc2/scripts/build_deb.sh
+grep -q 'cd "${probe_dir}/build"' .xgc2/scripts/smoke_test_installed.sh
 
 echo "libxgc2-camera-dev package compliance checks passed."

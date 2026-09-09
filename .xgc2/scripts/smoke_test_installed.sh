@@ -56,7 +56,11 @@ int main()
 }
 CPP
 
-cmake -S "${probe_dir}" -B "${probe_dir}/build"
+# Bionic CMake 3.10: configure from the probe build directory.
+(
+  cd "${probe_dir}/build"
+  cmake "${probe_dir}"
+)
 cmake --build "${probe_dir}/build" -- -j2
 "${probe_dir}/build/link_probe"
 

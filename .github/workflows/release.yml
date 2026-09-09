@@ -104,7 +104,8 @@ jobs:
               for pkg in build-essential cmake; do
                 dpkg -s "${pkg}" >/dev/null
               done
-              cmake -S . -B .ci/source-tests -DCMAKE_BUILD_TYPE=RelWithDebInfo
+              mkdir -p .ci/source-tests
+              (cd .ci/source-tests && cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ../..)
               cmake --build .ci/source-tests -- -j"$(nproc)"
               (cd .ci/source-tests && ctest --output-on-failure)
             '

@@ -27,10 +27,15 @@ done
 clang-format --dry-run --Werror "${sources[@]}"
 
 rm -rf "${build_dir}"
-cmake -S "${repo_root}" -B "${build_dir}" \
-  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-  -DCMAKE_CXX_FLAGS="-Wall -Wextra -Wpedantic -Werror"
+mkdir -p "${build_dir}"
+(
+  cd "${build_dir}"
+  cmake \
+    -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+    -DCMAKE_CXX_FLAGS="-Wall -Wextra -Wpedantic -Werror" \
+    "${repo_root}"
+)
 cmake --build "${build_dir}" -- -j"$(nproc)"
 (cd "${build_dir}" && ctest --output-on-failure)
 
