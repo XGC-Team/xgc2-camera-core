@@ -118,6 +118,16 @@ jobs:
           - architecture: amd64
             runner: ubuntu-latest
             platform: linux/amd64
+            image: ghcr.io/xgc-team/xgc2-images/xgc2-build-bionic-dev:1.0.0
+            distribution: bionic
+          - architecture: arm64
+            runner: ubuntu-24.04-arm
+            platform: linux/arm64
+            image: ghcr.io/xgc-team/xgc2-images/xgc2-build-bionic-dev:1.0.0
+            distribution: bionic
+          - architecture: amd64
+            runner: ubuntu-latest
+            platform: linux/amd64
             image: ghcr.io/xgc-team/xgc2-images/xgc2-build-focal-dev:1.0.0
             distribution: focal
           - architecture: arm64

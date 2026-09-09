@@ -1,19 +1,19 @@
 schema: xgc2.product.v1
 id: libxgc2-camera-dev
 name: XGC2 Camera Core
-version: 0.1.0-9
+version: 0.1.0-10
 kind: toolchain-apt
 summary: ROS-independent C++14 V4L2 camera capture library, inspection tool, and development
   metadata for XGC2 camera adapters.
 apt:
-  distribution: focal,jammy,noble
+  distribution: bionic,focal,jammy,noble
   install:
   - libxgc2-camera-dev
   packages:
   - libxgc2-camera-dev
   depends:
   - libc6
-  - libgcc-s1
+  - libgcc1 | libgcc-s1
   - libstdc++6
 usage:
   install: 'sudo apt update
@@ -45,6 +45,7 @@ release:
   workflow: release.yml
   ci_workflow: ci.yml
   apt_versions:
-    focal: 0.1.0-9~focal
-    jammy: 0.1.0-9~jammy
-    noble: 0.1.0-9~noble
+    bionic: 0.1.0-10~bionic
+    focal: 0.1.0-10~focal
+    jammy: 0.1.0-10~jammy
+    noble: 0.1.0-10~noble

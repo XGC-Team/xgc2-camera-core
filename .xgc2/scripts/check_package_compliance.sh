@@ -77,5 +77,10 @@ if ! grep -q 'NAMESPACE xgc2::' CMakeLists.txt; then
   echo "missing installed xgc2:: target namespace" >&2
   exit 1
 fi
+grep -q '^  distribution: bionic,focal,jammy,noble$' .xgc2/product.yml
+grep -q '^    bionic: 0.1.0-10~bionic$' .xgc2/product.yml
+grep -q 'libgcc1 | libgcc-s1' .xgc2/scripts/build_deb.sh
+grep -q 'xgc2-build-bionic-dev:1.0.0' .github/workflows/ci.yml
+grep -q 'xgc2-build-bionic-dev:1.0.0' .github/workflows/release.yml
 
 echo "libxgc2-camera-dev package compliance checks passed."

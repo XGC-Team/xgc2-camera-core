@@ -15,8 +15,8 @@ arch="$(dpkg --print-architecture)"
 multiarch="$(dpkg-architecture -qDEB_HOST_MULTIARCH)"
 
 product_version() {
-  sed -n 's/^version:[[:space:]]*//p' \
-    "${repo_root}/.xgc2/product.yml" | head -n 1
+  awk -F': *' '/^version:/ {print $2; exit}' \
+    "${repo_root}/.xgc2/product.yml"
 }
 
 package_base_version="${PACKAGE_BASE_VERSION:-$(product_version)}"
@@ -69,7 +69,7 @@ Section: libdevel
 Priority: optional
 Architecture: ${arch}
 Maintainer: XGC2 <apt@example.com>
-Depends: libc6, libgcc-s1, libstdc++6
+Depends: libc6, libgcc1 | libgcc-s1, libstdc++6
 Description: ROS-independent XGC2 V4L2 camera development library
  C++14 headers, shared library, CMake metadata, and inspection utility for
  generic single-plane and multi-plane Linux V4L2 capture.
